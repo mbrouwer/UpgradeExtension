@@ -9,8 +9,8 @@ param (
     [Parameter(Mandatory = $false)][string]$extensionTypeName = "ConfigurationforWindows",
     [Parameter(Mandatory = $false)][string]$extensionName = "AzurePolicyforWindows",
     [Parameter(Mandatory = $false)][string]$extensionTypeVersion = "1.1",
-    [Parameter(Mandatory = $false)][switch]$enableAutomaticUpgrade = $false,
-    [Parameter(Mandatory = $false)][switch]$autoUpgradeMinorVersion = $true
+    [Parameter(Mandatory = $false)][switch]$enableAutomaticUpgrade,
+    [Parameter(Mandatory = $false)][switch]$autoUpgradeMinorVersion
     
 )
 
