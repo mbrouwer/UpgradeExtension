@@ -7,9 +7,11 @@ param (
     [Parameter(Mandatory = $false)][switch]$NoOutput,
     [Parameter(Mandatory = $false)][string]$extensionPublisherName = "Microsoft.GuestConfiguration",
     [Parameter(Mandatory = $false)][string]$extensionTypeName = "ConfigurationforWindows",
-    [Parameter(Mandatory = $false)][string]$extensionName = "AzurePolicyforWindows"
-    [Parameter(Mandatory = $false)][string]$extensionTypeVersion = "1.1"
-    [Parameter(Mandatory = $false)][switch]$enableAutomaticUpgrade = $false
+    [Parameter(Mandatory = $false)][string]$extensionName = "AzurePolicyforWindows",
+    [Parameter(Mandatory = $false)][string]$extensionTypeVersion = "1.1",
+    [Parameter(Mandatory = $false)][switch]$enableAutomaticUpgrade = $false,
+    [Parameter(Mandatory = $false)][switch]$autoUpgradeMinorVersion = $true
+    
 )
 
 Function Search-Azure {
@@ -55,7 +57,7 @@ function Install-VMExtension {
             publisher               = $extensionPublisherName
             type                    = $extensionTypeName
             typeHandlerVersion      = $extensionTypeVersion
-            autoUpgradeMinorVersion = $true
+            autoUpgradeMinorVersion = $autoUpgradeMinorVersion
             enableAutomaticUpgrade  = $enableAutomaticUpgrade
         }
         location   = "westeurope"
