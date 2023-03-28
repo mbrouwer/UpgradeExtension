@@ -8,6 +8,8 @@ param (
     [Parameter(Mandatory = $false)][string]$extensionPublisherName = "Microsoft.GuestConfiguration",
     [Parameter(Mandatory = $false)][string]$extensionTypeName = "ConfigurationforWindows",
     [Parameter(Mandatory = $false)][string]$extensionName = "AzurePolicyforWindows"
+    [Parameter(Mandatory = $false)][string]$extensionTypeVersion = "1.1"
+    [Parameter(Mandatory = $false)][switch]$enableAutomaticUpgrade = $false
 )
 
 Function Search-Azure {
@@ -52,9 +54,9 @@ function Install-VMExtension {
         properties = [PSCustomObject]@{
             publisher               = $extensionPublisherName
             type                    = $extensionTypeName
-            typeHandlerVersion      = "1.1"
+            typeHandlerVersion      = $extensionTypeVersion
             autoUpgradeMinorVersion = $true
-            enableAutomaticUpgrade  = $true
+            enableAutomaticUpgrade  = $enableAutomaticUpgrade
         }
         location   = "westeurope"
     } | ConvertTo-Json -Depth 10
