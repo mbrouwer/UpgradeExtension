@@ -67,30 +67,34 @@ function Install-VMExtension {
     return $return
 }
 
+# Initialize variables
 $startTime = Get-Date
 $InformationPreference = "Continue"
-
 $return = @()
 $virtualMachines = @()
 
-
+# Get all VMs 
 Write-Information "Getting all VMs"
 $virtualMachines = Search-Azure -Query "resources | where type == 'microsoft.compute/virtualmachines' | mv-expand customImage = properties.storageProfile.imageReference.id"
 $extensions = Search-Azure -Query "resources | where type == 'microsoft.compute/virtualmachines/extensions' | where name == '$($extensionName)'"
 
+# Get latest extension version
 Write-Information "Getting latest extension version"
 $url = "https://management.azure.com/subscriptions/$((Get-AzContext).Subscription.Id)/providers/Microsoft.Compute/locations/westeurope/publishers/$($extensionPublisherName)/artifacttypes/vmextension/types/$($extensionTypeName)/versions?api-version=2022-03-01"
 $latestVersion = ((Invoke-AzRestMethod -Uri $url).Content | ConvertFrom-Json | Select-Object @{Name = 'Version'; Expression = { [system.version]$_.name } } | Sort-Object Version -Descending)[0].Version.ToString()
 Write-Information "Latest version is $($latestVersion)"
 
+# Filter VMs on Name where applicable
 if (-not [string]::IsNullOrEmpty($vmFilter)) {
     $virtualMachines = ($virtualMachines | Where-Object { $_.Name -eq "$($vmFilter)" })    
 }
 
+# Filter VMs on Subscription where applicable
 if (-not [string]::IsNullOrEmpty($SubscriptionFilter)) {
     $virtualMachines = $virtualMachines | Where-Object { $_.SubscriptionId -eq $SubscriptionFilter }
 }
 
+# Filter VMs on Custom Image where applicable
 if (-not $AllowCustomImage) {
     $virtualMachines = $virtualMachines | Where-Object { -not $_.customImage }
 }
@@ -101,12 +105,12 @@ $virtualMachines = $virtualMachines | Where-Object { $_.properties.storageProfil
 
 $return = @()
 
+# Parse VMs with the extension
 Write-Information "Parsing extensions for $($virtualMachines.count) VM(s)"
 $vmCount = 0
 foreach ($virtualMachine in $virtualMachines) {
     $vmCount++
-    # Write-Progress -Activity "Parsing VM '$($virtualMachine.Name)'" -PercentComplete (($vmCount / $virtualMachines.count)*100)
-
+    # Check the extension if it exists
     if (@($extensions | Where-Object { $_.id -like "$($virtualMachine.id)*" }).Count -gt 0) {
         $extensionUrl = "https://management.azure.com$($virtualMachine.Id)/extensions/$($extensionName)?`$expand=instanceView&api-version=2021-11-01"
         $extensionObject = ((Invoke-AzRestMethod -Uri $extensionUrl).Content | ConvertFrom-Json -Depth 99 | Where-Object { $null -ne $_.id })
@@ -133,10 +137,10 @@ foreach ($virtualMachine in $virtualMachines) {
         UpgradeExtension   = $false
         UpgradeResult      = $null
         VMObject           = $virtualMachine
-        # ExtensionObject    = $extensionObject
-
+        ExtensionObject    = $extensionObject
     }
 
+    # Check if the extension needs to be upgraded and/or installed
     if ($returnObject.ExtensionInstalled) {
         if ($returnObject.PoweredOn) {
             if (-not ([System.Version]$returnObject.ExtensionVersion -ge [System.Version]$latestVersion)) {
@@ -154,6 +158,7 @@ foreach ($virtualMachine in $virtualMachines) {
         }
     }
 
+    # Install the extension if needed and if the switch allows this
     if ($returnObject.UpgradeExtension -and $installExtension) {
         Write-Information "Installing extension on VM '$($returnObject.VMName)'"
         $returnObject.UpgradeResult = (Install-VMExtension -virtualMachineId $virtualMachine.Id)
